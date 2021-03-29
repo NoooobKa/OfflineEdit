@@ -1,0 +1,23 @@
+name: OfflineEditor
+main: com.NBK.OfflineEditor.main.OfflineEditor
+version: 1.0
+author: NoooobKa
+commands:
+    OfflineEdit:
+        permission: oe.use
+    OEreload:
+    
+permissions:
+    oe.*:
+        default: op
+        children:
+            oe.use: true
+            oe.editLocation: true
+            oe.editHealth: true
+            oe.editAbsorbation: true
+            oe.editGameMode: true
+            oe.editFoodLevel: true
+            oe.editLevel: true
+            oe.editInventory: true
+            oe.editEnderChest: true
+            
