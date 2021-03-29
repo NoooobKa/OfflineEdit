@@ -15,7 +15,10 @@ public class OEReloadCommand implements CommandExecutor{
 	}
 	
 	@Override
-	public boolean onCommand(CommandSender arg0, Command arg1, String arg2, String[] arg3) {
+	public boolean onCommand(CommandSender s, Command arg1, String arg2, String[] arg3) {
+		if (!s.hasPermission("oe.use")) {
+			return true;
+		}
 		PlayersDataBase.reload();
 		Database.reload();
 		return true;

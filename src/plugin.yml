@@ -6,7 +6,8 @@ commands:
     OfflineEdit:
         permission: oe.use
     OEreload:
-    
+        permission: oe.use
+        
 permissions:
     oe.*:
         default: op
