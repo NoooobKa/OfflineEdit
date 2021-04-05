@@ -3,6 +3,9 @@ package com.NBK.OfflineEditor.data.versions.v1_14_R1;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -12,6 +15,8 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_14_R1.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import com.NBK.OfflineEditor.Inventory.IOfflinePlayerInventory;
 import com.NBK.OfflineEditor.data.IData;
@@ -49,14 +54,13 @@ public class Manager implements IData{
 	@Override
 	public void setHealth(OfflinePlayer player, float health) {
 		NBTTagCompound tagCompound = getPlayerNBT(player);
-		tagCompound.setFloat("HealF", health);
-		tagCompound.setShort("Health", (short)(int)Math.ceil(health));
+		tagCompound.setFloat("Health", health);
 		save(tagCompound, player);
 	}
 
 	@Override
 	public float getHealth(OfflinePlayer player) {
-		return getPlayerNBT(player).getFloat("HealF");
+		return getPlayerNBT(player).getFloat("Health");
 	}
 	
 	@Override
@@ -153,6 +157,49 @@ public class Manager implements IData{
 	@Override
 	public GameMode getGameMode(OfflinePlayer player) {
 		return GameMode.getByValue(getPlayerNBT(player).getInt("playerGameType"));
+	}
+	
+	@SuppressWarnings("deprecation")
+	@Override
+	public void setPotionEffects(OfflinePlayer player, List<PotionEffect> effects) {
+		if (effects.size() > 0) {
+			NBTTagCompound playerNBT = getPlayerNBT(player);
+			AttributeMapBase ams = new AttributeMapServer();
+			NBTTagList nbttaglist = new NBTTagList();
+			Iterator<PotionEffect> iterator = effects.iterator();
+			while (iterator.hasNext()) {
+				PotionEffect effect = iterator.next();
+				MobEffect me = new MobEffect(MobEffectList.fromId(effect.getType().getId()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles());
+				me.getMobEffect().b(null, ams, me.getAmplifier());
+				nbttaglist.add(me.a(new NBTTagCompound()));
+			}
+			playerNBT.set("ActiveEffects", nbttaglist);
+			playerNBT.set("Attributes", GenericAttributes.a(ams));
+			save(playerNBT, player);
+		}else {
+			NBTTagCompound playerNBT = getPlayerNBT(player);
+			playerNBT.remove("ActiveEffects");
+			playerNBT.set("Attributes", GenericAttributes.a(new AttributeMapServer()));
+			save(playerNBT, player);
+		}
+	}
+	
+	@SuppressWarnings("deprecation")
+	@Override
+	public List<PotionEffect> getPotionEffects(OfflinePlayer player) {
+		List<PotionEffect> effects = new ArrayList<>();
+		NBTTagCompound nbtTagCompound = getPlayerNBT(player);
+		if (nbtTagCompound.hasKeyOfType("ActiveEffects", 9)) {
+			NBTTagList nbttaglist = nbtTagCompound.getList("ActiveEffects", 10);
+			for (int i = 0; i < nbttaglist.size(); i++) {
+				NBTTagCompound nbtTagCompound2 = nbttaglist.getCompound(i);
+				MobEffect effect = MobEffect.b(nbtTagCompound2);
+				if (effect != null) {
+					effects.add(new PotionEffect(PotionEffectType.getById(MobEffectList.getId(effect.getMobEffect())), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.isShowParticles()));
+				}
+			}
+		}
+		return effects;
 	}
 	
     public static File getPlayerFile(final OfflinePlayer player) {

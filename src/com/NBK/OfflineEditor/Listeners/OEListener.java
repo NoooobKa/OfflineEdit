@@ -1,5 +1,7 @@
 package com.NBK.OfflineEditor.Listeners;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -12,13 +14,18 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import com.NBK.OfflineEditor.Inventory.InventoryManager;
 import com.NBK.OfflineEditor.database.Database;
 import com.NBK.OfflineEditor.database.PlayersDataBase;
 import com.NBK.OfflineEditor.player.OfflineEditPlayer;
 import com.NBK.OfflineEditor.util.CustomStack;
+import com.NBK.OfflineEditor.util.PotionBuilder;
 import com.NBK.OfflineEditor.util.VersionUtils;
 
 
@@ -28,6 +35,7 @@ public class OEListener implements Listener{
 		Bukkit.getPluginManager().registerEvents(this, p);
 	}
 	
+	@SuppressWarnings("deprecation")
 	@EventHandler
 	public void ice(InventoryClickEvent e) {
 		if (e.getClickedInventory() != null && (VersionUtils.isAboveThirteen() ? ChatColor.stripColor(e.getView().getTitle()) : ChatColor.stripColor(e.getInventory().getTitle())) != null) {
@@ -66,6 +74,9 @@ public class OEListener implements Listener{
 							switch (e.getSlot()) {
 							case 3:
 								if (hasPermission(changer, "oe.editHealth"))changer.openInventory(InventoryManager.createPlayerHealthChanger(p.getOfflinePlayer()));
+								break;
+							case 4:
+								if (hasPermission(changer, "oe.editEffects"))changer.openInventory(InventoryManager.createPlayerPotionChanger(p.getOfflinePlayer()));
 								break;
 							case 5:
 								if (hasPermission(changer, "oe.editAbsorbation"))changer.openInventory(InventoryManager.createPlayerAbsorbationChanger(p.getOfflinePlayer()));
@@ -151,7 +162,7 @@ public class OEListener implements Listener{
 							if (invName.equals("HealthChanger")) {
 								e.setCancelled(true);
 								OfflineEditPlayer p = OfflineEditPlayer.getPlayer(words[1].replace(" ", ""));
-								int health = Integer.valueOf(ChatColor.stripColor(e.getClickedInventory().getItem(13).getItemMeta().getDisplayName()).split("\\s")[1]);
+								float health = Float.valueOf(ChatColor.stripColor(e.getClickedInventory().getItem(13).getItemMeta().getDisplayName()).split("\\s")[1]);
 								switch (e.getSlot()) {
 								case 4:
 									e.getClickedInventory().setItem(13, new CustomStack(Material.REDSTONE).setName("§cHealth§f: §6" + (health + 1 < 20 ? health + 1 : 20)).getItemStack());
@@ -244,11 +255,100 @@ public class OEListener implements Listener{
 									p.setPosition(changer.getLocation());
 									changer.sendMessage("§dnow §6" + p.getOfflinePlayer().getName() + "§f'§6s §dlocation§f: §7§l(§a" + changer.getWorld().getName() + "§f, §6" + changer.getLocation().getX() + "§f, §6" + changer.getLocation().getY() + "§f, §6" + changer.getLocation().getZ() + "§7§l)");
 									Location loc = changer.getLocation();
-									e.getClickedInventory().setItem(13, new CustomStack(Material.COMPASS).setName("§Click to set ur position").addStringInLore("§aCurrent Postition§f:").addStringInLore("§eX§f: §6" + (int)loc.getX()).addStringInLore("§eY§f: §6" + (int)loc.getY()).addStringInLore("§eZ§f: §6" + (int)loc.getZ()).getItemStack());
+									e.getClickedInventory().setItem(13, new CustomStack(Material.COMPASS).setName("§aClick to set ur position").addStringInLore("§aCurrent Postition§f:").addStringInLore("§eX§f: §6" + (int)loc.getX()).addStringInLore("§eY§f: §6" + (int)loc.getY()).addStringInLore("§eZ§f: §6" + (int)loc.getZ()).getItemStack());
 								}
 								return;
 							}
+							if (invName.equals("PotionChanger")) {
+								if (e.getSlot() == 35) {
+									e.setCancelled(true);
+									List<PotionEffect> newEffects = new ArrayList<>();
+									for (int i = 0; i < 35; i++) {
+										ItemStack is = e.getClickedInventory().getItem(i);
+										if (is != null && is.getType() == Material.POTION) {
+											PotionBuilder pb = PotionBuilder.fromItemStack(is);
+											if (pb != null) {
+												newEffects.add(pb.toPotionEffect());
+											}
+										}
+									}
+									OfflineEditPlayer p = OfflineEditPlayer.getPlayer(words[1].replace(" ", ""));
+									p.setPotionEffects(newEffects);
+									return;
+								}
+								if (e.getSlot() == 34) {
+									e.setCancelled(true);
+									changer.openInventory(InventoryManager.createPotionBuilderGUI());
+									return;
+								}
+							}
 						}
+					}
+				}
+			}else {
+				if (title.contains("PotionBuilder")) {
+					if (e.getClickedInventory().getType() == InventoryType.PLAYER)return;
+					e.setCancelled(true);
+					int currentTypeId;
+					int newTypeId;
+					int currentTime;
+					int currentLevel;
+					switch (e.getSlot()) {
+					case 3:
+						currentTime = Integer.valueOf(e.getClickedInventory().getItem(21).getItemMeta().getDisplayName().split("\\s")[1]);
+						e.getClickedInventory().setItem(21, new CustomStack(Material.WATCH).setName("§aDuration§f: " + (currentTime + 10)).getItemStack());
+						break;
+					case 11:
+						currentTypeId = PotionEffectType.getByName(ChatColor.stripColor(e.getClickedInventory().getItem(20).getItemMeta().getDisplayName().split("\\s")[1])).getId();
+						newTypeId = currentTypeId == (PotionEffectType.values().length - 1) ? 1 : currentTypeId + 1;
+						e.getClickedInventory().setItem(20, new CustomStack(Material.NETHER_STALK).setName("§aTYPE§f: §c§l" + PotionEffectType.getById(newTypeId).getName()).getItemStack());
+						break;
+					case 12:
+						currentTime = Integer.valueOf(e.getClickedInventory().getItem(21).getItemMeta().getDisplayName().split("\\s")[1]);
+						e.getClickedInventory().setItem(21, new CustomStack(Material.WATCH).setName("§aDuration§f: " + (currentTime + 1)).getItemStack());
+						break;
+					case 13:
+						currentLevel = Integer.valueOf(e.getClickedInventory().getItem(22).getItemMeta().getDisplayName().split("\\s")[1]);
+						e.getClickedInventory().setItem(22, new CustomStack(Material.GLOWSTONE_DUST).setName("§aLevel§f: " + (currentLevel + 1)).getItemStack());
+						break;
+					case 14:
+						e.getClickedInventory().setItem(23, new CustomStack(Material.NETHER_STAR).setName("§aAmbient§f: " + "true").addStringInLore("If true, more particles are hit").getItemStack());
+						break;
+					case 15:
+						e.getClickedInventory().setItem(24, new CustomStack(Material.REDSTONE_TORCH_ON).setName("§aParticles§f: " + "false").getItemStack());
+						break;
+					case 29:
+						currentTypeId = PotionEffectType.getByName(ChatColor.stripColor(e.getClickedInventory().getItem(20).getItemMeta().getDisplayName().split("\\s")[1])).getId();
+						newTypeId = currentTypeId == 1 ? PotionEffectType.values().length - 1 : currentTypeId - 1;
+						e.getClickedInventory().setItem(20, new CustomStack(Material.NETHER_STALK).setName("§aTYPE§f: §c§l" + PotionEffectType.getById(newTypeId).getName()).getItemStack());
+						break;
+					case 30:
+						currentTime = Integer.valueOf(e.getClickedInventory().getItem(21).getItemMeta().getDisplayName().split("\\s")[1]);
+						e.getClickedInventory().setItem(21, new CustomStack(Material.WATCH).setName("§aDuration§f: " + (currentTime > 1 ? (currentTime - 1) : 1)).getItemStack());
+						break;
+					case 31:
+						currentLevel = Integer.valueOf(e.getClickedInventory().getItem(22).getItemMeta().getDisplayName().split("\\s")[1]);
+						e.getClickedInventory().setItem(22, new CustomStack(Material.GLOWSTONE_DUST).setName("§aLevel§f: " + (currentLevel > 1 ? (currentLevel - 1) : 1)).getItemStack());
+						break;
+					case 32:
+						e.getClickedInventory().setItem(23, new CustomStack(Material.NETHER_STAR).setName("§aAmbient§f: " + "false").addStringInLore("If true, more particles are hit").getItemStack());
+						break;
+					case 33:
+						e.getClickedInventory().setItem(24, new CustomStack(Material.REDSTONE_TORCH_OFF).setName("§aParticles§f: " + "false").getItemStack());
+						break;
+					case 39:
+						currentTime = Integer.valueOf(e.getClickedInventory().getItem(21).getItemMeta().getDisplayName().split("\\s")[1]);
+						e.getClickedInventory().setItem(21, new CustomStack(Material.WATCH).setName("§aDuration§f: " + (currentTime - 10 > 0 ? (currentTime - 10) : 1)).getItemStack());
+						break;
+					case 53:
+						e.getWhoClicked().setItemOnCursor(new PotionBuilder(PotionEffectType.getByName(ChatColor.stripColor(e.getClickedInventory().getItem(20).getItemMeta().getDisplayName().split("\\s")[1])).getId(),
+								Integer.valueOf(e.getClickedInventory().getItem(21).getItemMeta().getDisplayName().split("\\s")[1]) * 20,
+								Integer.valueOf(e.getClickedInventory().getItem(22).getItemMeta().getDisplayName().split("\\s")[1]) - 1,
+								Boolean.valueOf(e.getClickedInventory().getItem(23).getItemMeta().getDisplayName().split("\\s")[1]),
+								Boolean.valueOf(e.getClickedInventory().getItem(24).getItemMeta().getDisplayName().split("\\s")[1])).toItemStack());
+						break;
+					default:
+						break;
 					}
 				}
 			}

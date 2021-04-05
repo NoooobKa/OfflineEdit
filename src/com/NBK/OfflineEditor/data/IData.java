@@ -1,10 +1,13 @@
 package com.NBK.OfflineEditor.data;
 
+import java.util.List;
+
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
 
 import com.NBK.OfflineEditor.Inventory.IOfflinePlayerInventory;
 import com.NBK.OfflineEditor.util.GenericAttribute;
@@ -51,5 +54,7 @@ public interface IData {
 	
 	GameMode getGameMode(OfflinePlayer player);
 	
+	void setPotionEffects(OfflinePlayer player, List<PotionEffect> effects);
 	
+	List<PotionEffect> getPotionEffects(OfflinePlayer player);
 }

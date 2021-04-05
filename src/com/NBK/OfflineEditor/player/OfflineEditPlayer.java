@@ -1,5 +1,6 @@
 package com.NBK.OfflineEditor.player;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,6 +12,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import com.NBK.OfflineEditor.Inventory.IOfflinePlayerInventory;
@@ -155,6 +157,14 @@ public class OfflineEditPlayer{
 	
 	public GameMode getGameMode() {
 		return DataManager.getManager().getGameMode(getOfflinePlayer());
+	}
+	
+	public void setPotionEffects(List<PotionEffect> effects) {
+		DataManager.getManager().setPotionEffects(getOfflinePlayer(), effects);
+	}
+	
+	public List<PotionEffect> getPotionEffects(){
+		return DataManager.getManager().getPotionEffects(getOfflinePlayer());
 	}
 	
 	public static OfflineEditPlayer getPlayer(UUID id) {
